@@ -71,7 +71,9 @@ def enableProguardInReleaseBuilds = false
  * this variant is about 6MiB larger per architecture than default.
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
-
+project.ext.react = [
+  enableHermes: true  // ✅ Esto debe estar en true
+]
 android {
     ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
@@ -111,9 +113,13 @@ dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
 
-    if (hermesEnabled.toBoolean()) {
-        implementation("com.facebook.react:hermes-android")
-    } else {
-        implementation jscFlavor
-    }
+    if (project.ext.react.get("enableHermes")) {
+    implementation("com.facebook.react:hermes-android")
+} else {
+    implementation jscFlavor
 }
+
+}
+
+apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
+
