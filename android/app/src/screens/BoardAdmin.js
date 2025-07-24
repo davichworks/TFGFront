@@ -41,6 +41,9 @@ export default function BoardAdmin() {
           "Error al cargar los usuarios.";
         setError(errMsg);
       });
+
+   
+
   };
 
   const handleDelete = (id) => {

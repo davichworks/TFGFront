@@ -9,10 +9,12 @@ import {
   TouchableOpacity,
   Modal,
   FlatList,
+  Switch, // Añadido para los checkboxes
 } from "react-native";
 import RNPickerSelect from "react-native-picker-select";
 import RoutineService from "../services/routine.service";
 import MaterialIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import AsyncStorage from "@react-native-async-storage/async-storage"; // Añadido para obtener el usuario
 
 const CreateRoutine = () => {
   const [dietPlans, setDietPlans] = useState([]);
@@ -33,7 +35,7 @@ const CreateRoutine = () => {
 
   const [hr, setHr] = useState({
     name: "", description: "", type: null, days: "",
-     minAge: "", maxAge: "", minHeight: "",
+    minAge: "", maxAge: "", minHeight: "",
     maxHeight: "", activityLevel: null,
     selectedDietPlans: [], selectedExercisePlans: []
   });
@@ -43,25 +45,52 @@ const CreateRoutine = () => {
   const [exercisePlanTitle, setExercisePlanTitle] = useState("");
   const [exerciseRows, setExerciseRows] = useState([{ name: "", sets: "", reps: "" }]);
 
+  const [showOnlyMinePlans, setShowOnlyMinePlans] = useState(false);
+  const [showOnlyMineRoutines, setShowOnlyMineRoutines] = useState(false);
+  const [userId, setUserId] = useState(null);
+
   useEffect(() => {
+    const getUser = async () => {
+      try {
+        const userStr = await AsyncStorage.getItem("user");
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          setUserId(user.id);
+        }
+      } catch (e) {
+        setUserId(null);
+      }
+    };
+    getUser();
     loadAll();
   }, []);
 
   const loadAll = async () => {
-  try {
-    const [dpRes, epRes, hrRes] = await Promise.all([
-      RoutineService.getDietPlans(),
-      RoutineService.getExercisePlans(),
-      RoutineService.getHealthRoutines()
-    ]);
-    setDietPlans(dpRes.data || []);
-    setExercisePlans(epRes.data || []);
-    setHealthRoutines(hrRes.data.routines || []); // <--- CORREGIDO
-  } catch (e) {
-    Alert.alert("Error", "Error cargando los datos.");
-    console.error(e);
-  }
-};
+    try {
+      const [dpRes, epRes, hrRes] = await Promise.all([
+        RoutineService.getDietPlans(),
+        RoutineService.getExercisePlans(),
+        RoutineService.getHealthRoutines()
+      ]);
+      setDietPlans(dpRes.data || []);
+      setExercisePlans(epRes.data || []);
+      setHealthRoutines(hrRes.data.routines || []);
+    } catch (e) {
+      Alert.alert("Error", "Error cargando los datos.");
+      console.error(e);
+    }
+  };
+
+  // Filtrado según el switch y el userId
+  const filteredDietPlans = showOnlyMinePlans && userId
+    ? dietPlans.filter(plan => plan.userId === userId)
+    : dietPlans;
+  const filteredExercisePlans = showOnlyMinePlans && userId
+    ? exercisePlans.filter(plan => plan.userId === userId)
+    : exercisePlans;
+  const filteredHealthRoutines = showOnlyMineRoutines && userId
+    ? healthRoutines.filter(routine => routine.userId === userId)
+    : healthRoutines;
 
   const createDietPlan = async () => {
     if (Object.values(dp).some(v => !v)) {
@@ -362,8 +391,8 @@ const CreateRoutine = () => {
           { key: "days", label: "Días", numeric: true },
           { key: "minAge", label: "Edad mínima", numeric: true },
           { key: "maxAge", label: "Edad máxima", numeric: true },
-          { key: "minHeight", label: "Altura mínima (cm)", numeric: true },
-          { key: "maxHeight", label: "Altura máxima (cm)", numeric: true },
+          { key: "minHeight", label: "Peso mínimo", numeric: true },
+          { key: "maxHeight", label: "Peso máximo", numeric: true },
         ].map(({ key, label, numeric }) => (
           <TextInput
             key={key}
@@ -395,13 +424,26 @@ const CreateRoutine = () => {
           style={pickerStyles}
         />
 
+        {/* Switch para mostrar sólo mis Diet/Exercise Plans */}
+        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
+          <Switch
+            value={showOnlyMinePlans}
+            onValueChange={setShowOnlyMinePlans}
+            thumbColor={showOnlyMinePlans ? "#2563eb" : "#ccc"}
+            trackColor={{ false: "#ccc", true: "#a5b4fc" }}
+          />
+          <Text style={{ marginLeft: 8, color: "#2563eb", fontWeight: "bold" }}>
+            Mostrar sólo mis Diet/Exercise Plans
+          </Text>
+        </View>
+
         <TouchableOpacity onPress={() => setShowDietList(v => !v)} style={styles.accordionHeader}>
           <Text style={styles.subTitle}>Selecciona Diet Plans</Text>
           <MaterialIcons name={showDietList ? "chevron-up" : "chevron-down"} size={22} color="#2563eb" />
         </TouchableOpacity>
         {showDietList && (
           <View style={styles.accordionContent}>
-            {dietPlans.map(plan => {
+            {filteredDietPlans.map(plan => {
               const expanded = expandedDietPlan === plan.id;
               return (
                 <View key={plan.id} style={{ marginBottom: 6 }}>
@@ -451,7 +493,7 @@ const CreateRoutine = () => {
         </TouchableOpacity>
         {showExerciseList && (
           <View style={styles.accordionContent}>
-            {exercisePlans.map(plan => {
+            {filteredExercisePlans.map(plan => {
               const lines = (plan.exercises || "").split("\n").map(l => l.trim()).filter(Boolean);
               const title = lines[0] || "";
               const exercises = lines.slice(1);
@@ -525,8 +567,8 @@ const CreateRoutine = () => {
             { key: "days", label: "Días", numeric: true },
             { key: "minAge", label: "Edad mínima", numeric: true },
             { key: "maxAge", label: "Edad máxima", numeric: true },
-            { key: "minHeight", label: "Altura mínima (cm)", numeric: true },
-            { key: "maxHeight", label: "Altura máxima (cm)", numeric: true },
+            { key: "minHeight", label: "Peso mínimo", numeric: true },
+            { key: "maxHeight", label: "Peso máximo", numeric: true },
           ].map(({ key, label, numeric }) => (
             <TextInput
               key={key}
@@ -558,13 +600,26 @@ const CreateRoutine = () => {
             style={pickerStyles}
           />
 
+          {/* Switch para mostrar sólo mis Diet/Exercise Plans */}
+          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
+            <Switch
+              value={showOnlyMinePlans}
+              onValueChange={setShowOnlyMinePlans}
+              thumbColor={showOnlyMinePlans ? "#2563eb" : "#ccc"}
+              trackColor={{ false: "#ccc", true: "#a5b4fc" }}
+            />
+            <Text style={{ marginLeft: 8, color: "#2563eb", fontWeight: "bold" }}>
+              Mostrar sólo mis Diet/Exercise Plans
+            </Text>
+          </View>
+
           <TouchableOpacity onPress={() => setShowDietList(v => !v)} style={styles.accordionHeader}>
             <Text style={styles.subTitle}>Selecciona Diet Plans</Text>
             <MaterialIcons name={showDietList ? "chevron-up" : "chevron-down"} size={22} color="#2563eb" />
           </TouchableOpacity>
           {showDietList && (
             <View style={styles.accordionContent}>
-              {dietPlans.map(plan => {
+              {filteredDietPlans.map(plan => {
                 const expanded = expandedDietPlan === plan.id;
                 return (
                   <View key={plan.id} style={{ marginBottom: 6 }}>
@@ -614,7 +669,7 @@ const CreateRoutine = () => {
           </TouchableOpacity>
           {showExerciseList && (
             <View style={styles.accordionContent}>
-              {exercisePlans.map(plan => {
+              {filteredExercisePlans.map(plan => {
                 const lines = (plan.exercises || "").split("\n").map(l => l.trim()).filter(Boolean);
                 const title = lines[0] || "";
                 const exercises = lines.slice(1);
@@ -673,21 +728,34 @@ const CreateRoutine = () => {
         </View>
       </ScrollView>
 
+      {/* Switch para mostrar sólo mis rutinas */}
+      <View style={{ flexDirection: "row", alignItems: "center", marginLeft: 16, marginTop: 8 }}>
+        <Switch
+          value={showOnlyMineRoutines}
+          onValueChange={setShowOnlyMineRoutines}
+          thumbColor={showOnlyMineRoutines ? "#2563eb" : "#ccc"}
+          trackColor={{ false: "#ccc", true: "#a5b4fc" }}
+        />
+        <Text style={{ marginLeft: 8, color: "#2563eb", fontWeight: "bold" }}>
+          Mostrar sólo mis Rutinas
+        </Text>
+      </View>
+
       <Text style={styles.sectionTitle}>Rutinas creadas</Text>
       <FlatList
-        data={healthRoutines}
+        data={filteredHealthRoutines}
         keyExtractor={item => item.id?.toString()}
         renderItem={({ item }) => (
           <View style={styles.itemRow}>
             <View>
               <Text style={styles.itemText}>{item.name} ({item.type})</Text>
               <Text style={styles.itemSubText}>
-                Días: {item.days} | Usuario: {"Usuario"}
+                Días: {item.days} | Usuario: {item.userId}
               </Text>
             </View>
             <TouchableOpacity
               onPress={async () => {
-                //await RoutineService.deleteHealthRoutine(item.id);
+                await RoutineService.deleteHealthRoutine(item.id);
                 loadAll();
               }}
             >

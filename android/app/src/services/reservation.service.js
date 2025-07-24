@@ -8,8 +8,15 @@ class ReservationService {
 
 
   async createReservation(reservableType, reservableId, specificDate, startTime, endTime) {
-    const headers = await authHeader(); // authHeader es async
-    return axios.post(API_URL + "createReservation",{reservableType, reservableId, specificDate,startTime,endTime}, { headers });
+    const headers = await authHeader();
+    const response = await axios.post(API_URL + "createReservation", {
+    reservableType,
+    reservableId,
+    specificDate,
+    startTime,
+    endTime
+   }, { headers });
+   return response.data.reservation;
   }
 
   async getReservations() {

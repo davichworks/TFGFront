@@ -4,6 +4,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import UserService from "../services/user.service";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { width } = Dimensions.get("window");
 
@@ -11,9 +12,17 @@ export default function Home({ navigation }) {
   const [content, setContent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [profileImage, setProfileImage] = useState(null);
+  
 
   useEffect(() => {
+    
     async function fetchContent() {
+      const storedImage = await AsyncStorage.getItem("profileImage");
+      if (storedImage) {
+        setProfileImage(storedImage);
+      }
+
       try {
         const response = await UserService.getPublicContent();
         setContent(response.data);
@@ -33,9 +42,9 @@ export default function Home({ navigation }) {
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
         <Image
-          source={require("../assets/logo.jpg")}
-          style={styles.logo}
-        />
+                      source={{ uri: profileImage } }
+                      style={styles.avatar}
+                    />
         <Text style={styles.gymName}>Salesport Gym</Text>
       </View>
 
@@ -57,7 +66,7 @@ export default function Home({ navigation }) {
       {/* Botones de navegación con iconos */}
       <View style={styles.navButtons}>
         <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("Reservation")}>
-          <Ionicons name="calendar" size={22} color="#fff" style={styles.buttonIcon} />
+          <Ionicons name="calendar" size={20} color="#fff" style={styles.buttonIcon} />
           <Text style={styles.buttonText}>Reservar</Text>
         </TouchableOpacity>
 
@@ -66,14 +75,14 @@ export default function Home({ navigation }) {
           <Text style={styles.buttonText}>Mis Reservas</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("Routines")}>
-          <MaterialCommunityIcons name="dumbbell" size={22} color="#fff" style={styles.buttonIcon} />
-          <Text style={styles.buttonText}>Rutinas</Text>
+        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("GenerateRoutines")}>
+          <MaterialCommunityIcons name="dumbbell" size={20} color="#fff" style={styles.buttonIcon} />
+          <Text style={styles.buttonText}>Generar Rutinas</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("Salud")}>
-          <Ionicons name="heart" size={22} color="#fff" style={styles.buttonIcon} />
-          <Text style={styles.buttonText}>Salud</Text>
+        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("MyRoutines")}>
+          <Ionicons name="archive" size={20} color="#fff" style={styles.buttonIcon} />
+          <Text style={styles.buttonText}>Rutinas Guardadas</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -186,7 +195,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 14,
-    paddingHorizontal: 22,
+    paddingHorizontal: 2,
     borderRadius: 30,
     marginBottom: 12,
     minWidth: "45%",
@@ -204,6 +213,11 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "600",
     fontSize: 16,
+  },
+  avatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
   },
   error: {
     color: "red",

@@ -9,13 +9,24 @@ class RoutineService {
 // HEALTH ROUTINES
 
   async createHealthRoutine(data) {
-    const headers = await authHeader(); // authHeader es async
+    const headers = await authHeader(); 
     return axios.post(API_URL + "createHealthRoutine", data , { headers });
   }
 
+  async deleteHealthRoutine(routineId) {
+  const headers = await authHeader();
+  return axios.delete(API_URL + 'deleteHealthRoutine', {
+    headers,
+    data: { routineId },
+  });
+}
+
   async getRecommendedRoutines(params) {
     const headers = await authHeader();
-    return axios.get(API_URL + 'getRecommendedRoutines',params, { headers });
+    return axios.get(API_URL + 'getRecommendedRoutines', {
+  headers,
+  params,
+});
   }
 
   async getHealthRoutines() {
@@ -30,6 +41,24 @@ class RoutineService {
       { headers }
     );
   }
+
+  async saveRoutine(routineId) {
+    const headers = await authHeader();
+    return axios.post(API_URL + 'saveRoutine', routineId, { headers });
+  }
+
+  async getSavedRoutines() {
+    const headers = await authHeader();
+    return axios.get(API_URL + 'getSavedRoutines', { headers });
+  }
+
+  async deleteSavedRoutine(routineId) {
+  const headers = await authHeader();
+  return axios.delete(API_URL + 'deleteSavedRoutine', {
+    headers,
+    data: { routineId },
+  });
+}
 
   //DIET PLANS 
 

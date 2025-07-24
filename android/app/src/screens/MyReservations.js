@@ -13,6 +13,7 @@ import Feather from 'react-native-vector-icons/Feather';
 import MaterialIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import ReservationService from '../services/reservation.service';
 import { useFocusEffect } from '@react-navigation/native';
+import PushNotification from "react-native-push-notification";
 
 const MyReservations = () => {
   const [reservations, setReservations] = useState([]);
@@ -51,6 +52,8 @@ const MyReservations = () => {
             try {
               await ReservationService.deleteReservation(id);
               setReservations((prev) => prev.filter((res) => res.id !== id));
+              // Cancela la notificación local asociada a esta reserva
+              PushNotification.cancelLocalNotifications({ id: String(id) });
               Alert.alert('Eliminada', 'La reserva fue eliminada correctamente.');
             } catch (error) {
               console.error('Error al eliminar reserva:', error);

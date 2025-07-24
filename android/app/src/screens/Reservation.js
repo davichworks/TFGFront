@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState} from "react";
 import {
   View,
   Text,
@@ -20,6 +20,7 @@ import ActivityService from "../services/activity.service";
 import SpaceService from "../services/space.service";
 import UserService from "../services/user.service";
 import { useFocusEffect } from '@react-navigation/native';
+import PushNotification from "react-native-push-notification";
 
 const diasSemana = [
   "Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sábado"
@@ -44,7 +45,7 @@ export default function Reservation() {
       UserService.getTrainers().then(res => setTrainers(res.data || []));
     }, [])
   );
-
+ 
   const nextDays = () => setCurrentStartDate(d => addDays(d, 3));
   const prevDays = () => {
     const today = new Date();
@@ -95,7 +96,26 @@ export default function Reservation() {
       const specificDate =  dateStr;
 
     try {
-      await ReservationService.createReservation(type, resource.id, specificDate, startTime, endTime);
+      const reservation = await ReservationService.createReservation(type, resource.id, specificDate, startTime, endTime);
+      const reservationId = reservation.id;
+      const reservationDateTime = new Date(`${specificDate}T${startTime}`);
+      console.log(reservationDateTime.toString());
+      // Notificación 15 minutos antes
+      const notificationTime = new Date(reservationDateTime.getTime() - 15 * 60 * 1000);
+      const now = new Date();
+     
+      
+      console.log("Notificación programada para:", notificationTime.toString());
+      console.log("Hora actual:", now.toString());
+      const notificationTimes = new Date(2025, 6, 6, 21, 59);
+        PushNotification.localNotificationSchedule({
+          channelId: "default-channel-id", // asegúrate de crear este canal en Android
+          title: "¡Recuerda tu reserva!",
+          date: notificationTimes,
+          allowWhileIdle: true,
+        });
+      
+
       Alert.alert("Reservado", "Reserva creada con éxito");
       setSelectedResourceKey(null);
       setCustomStartHour("");

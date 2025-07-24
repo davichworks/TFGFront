@@ -14,11 +14,14 @@ import UserService from "../services/user.service";
 import { useNavigation } from "@react-navigation/native";
 import Feather from "react-native-vector-icons/Feather";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import { launchImageLibrary } from 'react-native-image-picker';
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
   const [currentUser, setCurrentUser] = useState(null);
   const [editingField, setEditingField] = useState({});
+  const [profileImage, setProfileImage] = useState(null);
+  
   const [formData, setFormData] = useState({
     name: "",
     username: "",
@@ -31,6 +34,10 @@ export default function ProfileScreen() {
   useEffect(() => {
     const fetchUser = async () => {
       const userStr = await AsyncStorage.getItem("user");
+      const storedImage = await AsyncStorage.getItem("profileImage");
+      if (storedImage) {
+        setProfileImage(storedImage);
+      }
       if (!userStr) {
         navigation.navigate("Home");
         return;
@@ -56,6 +63,21 @@ export default function ProfileScreen() {
       [field]: !prev[field],
     }));
   };
+
+  const handleImagePick = async () => {
+  const result = await launchImageLibrary({
+    mediaType: 'photo',
+    quality: 0.5,
+    includeBase64: true, 
+  });
+
+  if (result.didCancel) return;
+
+  const base64Image = `data:${result.assets[0].type};base64,${result.assets[0].base64}`;
+
+  setProfileImage(base64Image);
+  await AsyncStorage.setItem("profileImage", base64Image);
+};
 
   const handleChange = (key, value) => {
     setFormData((prev) => ({
@@ -125,10 +147,12 @@ export default function ProfileScreen() {
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
         <View style={styles.avatarContainer}>
-          <Image
-            source={require("../assets/avatar.jpg")}
-            style={styles.avatar}
-          />
+          <TouchableOpacity onPress={handleImagePick}>
+            <Image
+              source={profileImage ? { uri: profileImage } : require("../assets/avatar.jpg")}
+              style={styles.avatar}
+            />
+</TouchableOpacity>
         </View>
         <Text style={styles.name}>{formData.name}</Text>
         <Text style={styles.username}>@{formData.username}</Text>

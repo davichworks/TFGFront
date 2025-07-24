@@ -71,9 +71,11 @@ def enableProguardInReleaseBuilds = false
  * this variant is about 6MiB larger per architecture than default.
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
+
 project.ext.react = [
-  enableHermes: true  // ✅ Esto debe estar en true
+  enableHermes: true  // ✅ Esto debe estar en true para habilitar Hermes
 ]
+
 android {
     ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
@@ -87,6 +89,7 @@ android {
         versionCode 1
         versionName "1.0"
     }
+    
     signingConfigs {
         debug {
             storeFile file('debug.keystore')
@@ -94,32 +97,37 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+           
+            storeFile file('release.keystore')  
+            storePassword '123456'  
+            keyAlias 'tu-alias'  
+            keyPassword '123456'  
+        }
     }
+
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
-            minifyEnabled enableProguardInReleaseBuilds
-            proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+            signingConfig signingConfigs.release  // Asegúrate de usar el keystore para release
+            minifyEnabled enableProguardInReleaseBuilds  // Si deseas usar Proguard
+            proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"  // Reglas de Proguard
         }
     }
 }
 
 dependencies {
-    // The version of react-native is set by the React Native Gradle Plugin
+    // La versión de react-native es determinada por el plugin de React Native Gradle
     implementation("com.facebook.react:react-android")
 
     if (project.ext.react.get("enableHermes")) {
-    implementation("com.facebook.react:hermes-android")
-} else {
-    implementation jscFlavor
+        implementation("com.facebook.react:hermes-android")  // Si habilitas Hermes
+    } else {
+        implementation jscFlavor  // Si no, usas el motor JSC
+    }
+    // Agrega otras dependencias de tu proyecto si las necesitas
 }
 
-}
-
-apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
-
+apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"  // Si estás usando react-native-vector-icons
